@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package delivery;
+
+service DeliveryService {
+  rpc AssignDriver(AssignDriverRequest) returns (DeliveryResponse);
+  rpc GetDelivery(GetDeliveryRequest) returns (DeliveryResponse);
+  rpc UpdateDeliveryStatus(UpdateDeliveryStatusRequest) returns (DeliveryResponse);
+  rpc TrackDelivery(TrackDeliveryRequest) returns (stream TrackDeliveryResponse);
+}
+
+message AssignDriverRequest {
+  string order_id = 1;
+  string driver_id = 2;
+}
+
+message GetDeliveryRequest {
+  string delivery_id = 1;
+}
+
+message UpdateDeliveryStatusRequest {
+  string delivery_id = 1;
+  DeliveryStatus status = 2;
+  string current_location = 3;
+}
+
+message TrackDeliveryRequest {
+  string delivery_id = 1;
+}
+
+message DeliveryResponse {
+  string delivery_id = 1;
+  string order_id = 2;
+  string driver_id = 3;
+  string restaurant_address = 4;
+  string customer_address = 5;
+  DeliveryStatus status = 6;
+  string current_location = 7;
+  string assigned_at = 8;
+  string picked_up_at = 9;
+  string delivered_at = 10;
+  string estimated_delivery_time = 11;
+}
+
+message TrackDeliveryResponse {
+  string delivery_id = 1;
+  string driver_id = 2;
+  string current_location = 3;
+  DeliveryStatus status = 4;
+  string estimated_arrival_time = 5;
+}
+
+enum DeliveryStatus {
+  DELIVERY_UNKNOWN = 0;
+  DELIVERY_ASSIGNED = 1;
+  DELIVERY_PICKED_UP = 2;
+  DELIVERY_IN_PROGRESS = 3;
+  DELIVERY_DELIVERED = 4;
+  DELIVERY_CANCELLED = 5;
+}

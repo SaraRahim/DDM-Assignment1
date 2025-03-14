@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package restaurant;
+
+service RestaurantService {
+  rpc GetRestaurant(GetRestaurantRequest) returns (RestaurantResponse);
+  rpc UpdateMenu(UpdateMenuRequest) returns (MenuResponse);
+  rpc GetRestaurantPayments(GetRestaurantPaymentsRequest) returns (GetRestaurantPaymentsResponse);
+}
+
+message GetRestaurantRequest {
+  string restaurant_id = 1;
+}
+
+message RestaurantResponse {
+  string restaurant_id = 1;
+  string name = 2;
+  string address = 3;
+  bool is_open = 4;
+  repeated MenuItem menu_items = 5;
+}
+
+message UpdateMenuRequest {
+  string restaurant_id = 1;
+  repeated MenuItem menu_items = 2;
+}
+
+message MenuItem {
+  string item_id = 1;
+  string name = 2;
+  string description = 3;
+  double price = 4;
+  bool available = 5;
+}
+
+message MenuResponse {
+  string restaurant_id = 1;
+  repeated MenuItem menu_items = 2;
+  string updated_at = 3;
+}
+
+message GetRestaurantPaymentsRequest {
+  string restaurant_id = 1;
+}
+
+message Payment {
+  string payment_id = 1;
+  string order_id = 2;
+  double amount = 3;
+  string status = 4;
+  string timestamp = 5;
+}
+
+message GetRestaurantPaymentsResponse {
+  repeated Payment payments = 1;
+}

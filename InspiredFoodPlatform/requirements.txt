@@ -1,0 +1,9 @@
+grpcio
+googleapis-common-protos
+flask
+redis
+grpcio-tools
+grpcio-reflection
+fastapi
+uvicorn
+requests

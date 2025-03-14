@@ -1,0 +1,90 @@
+version: '3'
+services:
+  order_service:
+    build:
+      context: .
+      dockerfile: order_service/Order.Dockerfile
+    ports:
+      - "50051:50051"
+    environment:
+      - PORT=50051
+    networks:
+      - food-network
+    restart: on-failure
+
+  delivery_service:
+    build:
+      context: .
+      dockerfile: delivery_service/Delivery.Dockerfile
+    ports:
+      - "50052:50052"
+    environment:
+      - PORT=50052
+      - ORDER_SERVICE_ADDR=order_service:50051
+    networks:
+      - food-network
+    depends_on:
+      - order_service
+    restart: on-failure
+
+  restaurant_service:
+    build:
+      context: .
+      dockerfile: restaurant_service/Restaurant.Dockerfile
+    ports:
+      - "50053:50053"
+    environment:
+      - PORT=50053
+    networks:
+      - food-network
+    restart: on-failure
+
+  customer_service:
+    build:
+      context: .
+      dockerfile: customer_service/Customer.Dockerfile
+    ports:
+      - "50054:50054"
+    environment:
+      - PORT=50054
+    networks:
+      - food-network
+    restart: on-failure
+
+  api_gateway:
+    build:
+      context: .
+      dockerfile: gateway/Gateway.Dockerfile
+    ports:
+      - "50050:50050"
+    environment:
+      - PORT=50050
+      - ORDER_SERVICE_ADDR=order_service:50051
+      - DELIVERY_SERVICE_ADDR=delivery_service:50052
+      - RESTAURANT_SERVICE_ADDR=restaurant_service:50053
+      - CUSTOMER_SERVICE_ADDR=customer_service:50054
+    networks:
+      - food-network
+    depends_on:
+      - order_service
+      - delivery_service
+      - restaurant_service
+      - customer_service
+    restart: on-failure
+
+  client:
+    build:
+      context: .
+      dockerfile: client/Client.Dockerfile
+    environment:
+      - API_GATEWAY_HOST=api_gateway
+      - API_GATEWAY_PORT=50050
+    networks:
+      - food-network
+    depends_on:
+      - api_gateway
+    restart: on-failure
+
+networks:
+  food-network:
+    driver: bridge

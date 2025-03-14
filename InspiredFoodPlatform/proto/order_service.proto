@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package order;
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (OrderResponse);
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (OrderResponse);
+}
+
+message CreateOrderRequest {
+  string customer_id = 1;
+  string restaurant_id = 2;
+  repeated OrderItem items = 3;
+  string delivery_address = 4;
+  string special_instructions = 5;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message UpdateOrderStatusRequest {
+  string order_id = 1;
+  OrderStatus status = 2;
+}
+
+message OrderItem {
+  string item_id = 1;
+  string name = 2;
+  double price = 3;
+  int32 quantity = 4;
+  repeated string customizations = 5;
+}
+
+message OrderResponse {
+  string order_id = 1;
+  string customer_id = 2;
+  string restaurant_id = 3;
+  repeated OrderItem items = 4;
+  string delivery_address = 5;
+  string special_instructions = 6;
+  OrderStatus status = 7;
+  double total_amount = 8;
+  string created_at = 9;
+  string updated_at = 10;
+  string estimated_delivery_time = 11;
+}
+
+enum OrderStatus {
+  ORDER_UNKNOWN = 0;
+  ORDER_PENDING = 1;
+  ORDER_CONFIRMED = 2;
+  ORDER_PREPARING = 3;
+  ORDER_OUT_FOR_DELIVERY = 4;
+  ORDER_DELIVERED = 5;
+  ORDER_CANCELLED = 6;
+}
