@@ -1,6 +1,6 @@
 # Inspired Food Platform
 
-Inspired Food Platform is a microservice-based food ordering and delivery application that connects customers, restaurants, and delivery drivers through a streamlined process.
+This assignment requires me to analyse a business problem, design a microservice-based solution, implement core functionalities, and deploy the system using Docker Compose.
 
 ## Project Information
 
@@ -10,22 +10,20 @@ Inspired Food Platform is a microservice-based food ordering and delivery applic
 ## System Architecture
 
 The system is composed of several microservices:
-- **API Gateway**: Single entry point for external REST API calls, converting them to gRPC calls for internal communication
-- **Restaurant Service**: Manages restaurant details, menus, and payment tracking
-- **Order Service**: Handles order creation, status updates, and customer information
-- **Delivery Service**: Coordinates driver assignments and tracks delivery status
-- **Client Demo**: Simulates an end-to-end workflow for system testing
+- **API Gateway**: Single entry point for external REST API calls, converting them to gRPC calls for internal communication.
+- **Restaurant Service**: Oversees restaurant profiles by managing details such as menus and processing payments. This service allows restaurants to update their menus and accept or reject incoming orders while keeping track of payments.
+- **Order Service**: Manages the order lifecycle by creating orders and updating their status. It embeds customer information directly within each order so that customers can place orders and later track their delivery status.
+- **Delivery Service**: Handles all aspects of delivery by assigning drivers to orders and tracking the progress of deliveries. This service ensures that delivery drivers can view their assigned orders, update their status as they move along the route and mark orders as delivered.
+- **Client Demo**: Simulates an end-to-end workflow for system testing.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
+Ensure the following are installed:
 - Docker and Docker Compose
 - Git
-- Python 3.9 (for local development)
+- Python 3.9
 
-## Setup Instructions
-
-### Option 1: Using Docker Compose
+## Local Development Setup
 
 1. Clone the repository:
    ```bash
@@ -33,14 +31,7 @@ Before you begin, ensure you have the following installed:
    cd inspiredfoodplatform
    ```
 
-2. Build and run the services:
-   ```bash
-   docker-compose up --build
-   ```
-
-### Option 2: Running Locally
-
-1. Create and activate a virtual environment:
+2. Create a virtual environment:
 
    On macOS/Linux:
    ```bash
@@ -54,52 +45,81 @@ Before you begin, ensure you have the following installed:
    venv\Scripts\activate
    ```
 
-2. Install requirements:
+3. Install project requirements:
    ```bash
    pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
-3. Run individual services:
-   ```bash
-   python order_service.py
-   python restaurant_service.py
-   # Run other services similarly
-   ```
+## Running the Application and Integration Tests
 
-## Running the Application
+When running `docker-compose up --build`, the system performs an end-to-end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
 
-The client demo script simulates a complete workflow:
-1. API Gateway availability check
-2. Restaurant information retrieval
-3. Order creation
-4. Restaurant order acceptance
-5. Delivery process
-6. Order and payment updates
+1. **API Gateway Availability**: Checks if the API Gateway is operational
+2. **Restaurant Discovery**: Retrieves restaurant details and menu information
+3. **Order Creation**:
+   - Sends customer details (name, email, phone)
+   - Selects a restaurant and menu items
+   - Creates an order marked as pending
+4. **Restaurant Order Processing**:
+   - Restaurant reviews the order
+   - Decides to accept or reject the order
+5. **Delivery Assignment**:
+   - Delivery Service assigns a driver
+   - Tracks delivery status
+6. **Order Finalization**:
+   - Retrieves updated order details
+   - Processes restaurant payment information
 
-### Running the Client Demo
+The `client.py` script serves as an integration test, ensuring that:
+- All microservices communicate correctly
+- REST to gRPC translation works seamlessly
+- The entire business process flows without interruption
 
-With Docker Compose:
+To run the full test suite:
 ```bash
 docker-compose up --build
 ```
 
-## Workflow Details
+If everything runs successfully, you'll see a message indicating that the demo completed successfully, verifying the entire system's integration and functionality.
 
-The application demonstrates a full food ordering process:
-- Fetch restaurant and menu details
-- Create an order with customer information
-- Restaurant reviews and accepts the order
-- Assign a delivery driver
-- Track delivery status
-- Update order and payment information
+## Bonus Challenge: API Gateway Implementation
+
+### Bonus Challenge Details
+
+The API Gateway was implemented as a key component of the microservice architecture, addressing several critical design considerations:
+
+#### Implementation Approach
+- **Technology**: Implemented using FastAPI
+- **Primary Objectives**:
+  - Create a single entry point for all client requests
+  - Convert REST calls to gRPC messages for internal communication
+  - Provide a centralized and controlled interface to microservices
+
+#### Key Features
+- **Protocol Translation**: 
+  - Converts external REST API calls to internal gRPC communication
+  - Enables clients to interact with a simple REST interface
+  - Maintains high-performance internal communication via gRPC
+
+- **Architecture Benefits**:
+  - Centralized access management
+  - Simplified client integration
+  - Enhanced security through a controlled interface
+  - Abstraction of internal service complexities
+
+### Why This Approach Matters
+The API Gateway solution demonstrates:
+- Understanding of microservice architectural patterns
+- Advanced communication protocol handling
+- System design considerations for scalability and maintainability
 
 ## Troubleshooting
 
-### Common Issues
-- Container problems: Use `docker ps` to verify running containers
-- Network errors: Ensure required ports are free
-- Detailed logs: 
+### Issues I Encountered
+- Container problems: I Used `docker ps` to verify running containers
+- Network errors: I had to ensure required ports are free
+- Detailed logs:
   ```bash
   docker-compose logs [service_name]
   ```
@@ -121,6 +141,8 @@ The integration tests (client demo) cover the entire workflow, ensuring:
 
 ## Final Notes
 
-Follow the provided setup instructions to build, run, and test the Inspired Food Platform. Whether using Docker Compose or running services locally, the system provides a comprehensive food ordering solution.
-
-Happy testing!
+Running `docker-compose up --build` will:
+- Build all services
+- Start all containers
+- Run the comprehensive integration test
+- Verify the complete system functionality
