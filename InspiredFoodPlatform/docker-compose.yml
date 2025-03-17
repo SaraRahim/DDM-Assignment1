@@ -39,18 +39,6 @@ services:
       - food-network
     restart: on-failure
 
-  customer_service:
-    build:
-      context: .
-      dockerfile: customer_service/Customer.Dockerfile
-    ports:
-      - "50054:50054"
-    environment:
-      - PORT=50054
-    networks:
-      - food-network
-    restart: on-failure
-
   api_gateway:
     build:
       context: .
@@ -62,14 +50,12 @@ services:
       - ORDER_SERVICE_ADDR=order_service:50051
       - DELIVERY_SERVICE_ADDR=delivery_service:50052
       - RESTAURANT_SERVICE_ADDR=restaurant_service:50053
-      - CUSTOMER_SERVICE_ADDR=customer_service:50054
     networks:
       - food-network
     depends_on:
       - order_service
       - delivery_service
       - restaurant_service
-      - customer_service
     restart: on-failure
 
   client:

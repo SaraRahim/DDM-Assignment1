@@ -3,12 +3,17 @@ import uuid
 import logging
 from datetime import datetime
 from concurrent import futures
+import sys
 
 import grpc
 import delivery_service_pb2
 import delivery_service_pb2_grpc
-import order_service_pb2
-import order_service_pb2_grpc
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'order_service'))
+
+from order_service import order_service_pb2
+from order_service import order_service_pb2_grpc
 
 
 class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):

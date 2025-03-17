@@ -1,197 +1,163 @@
-# InspiredFoodPlatform
+# Inspired Food Platform
 
-InspiredFoodPlatform is a microservices-based online order and delivery platform for small restaurants. The system leverages gRPC for fast and efficient internal communication and a RESTful API Gateway (built with FastAPI) for external client interactions.
+A microservice-based food ordering and delivery platform that connects customers, restaurants, and delivery drivers through a seamless and integrated experience.
 
-## Table of Contents
+## System Architecture
 
-- [Introduction](#introduction)
-- [Architecture Overview](#architecture-overview)
-- [gRPC Interfaces & Protobuf](#grpc-interfaces--protobuf)
-- [Microservices Implementation](#microservices-implementation)
-  - [OrderService](#orderservice)
-  - [DeliveryService](#deliveryservice)
-  - [RestaurantService](#restaurantservice)
-  - [CustomerService](#customerservice)
-  - [API Gateway](#api-gateway)
-- [Docker & Deployment](#docker--deployment)
-- [Testing](#testing)
-- [Design Choices & Challenges](#design-choices--challenges)
-- [Possible Improvements](#possible-improvements)
-- [Conclusion](#conclusion)
+This platform implements a microservice architecture with the following components:
 
-## Introduction
+1. **API Gateway**: Entry point for client applications, providing a RESTful API interface
+2. **Restaurant Service**: Manages restaurant information, menus, and payments
+3. **Order Service**: Handles order creation, processing, and tracking
+4. **Delivery Service**: Coordinates delivery assignments and driver tracking
+5. **Client Demo**: Simulates a customer application for testing
 
-InspiredFoodPlatform allows customers to:
-- **Browse menus:** View restaurant menus.
-- **Place orders:** Create orders that get routed through the system.
-- **Track deliveries:** Receive real-time updates on delivery status.
+### Communication Layer
+- **Inter-service communication**: gRPC for efficient service-to-service communication
+- **External API**: RESTful API exposed through the Gateway for clients
+- **Data serialization**: Protocol Buffers for structured data exchange
 
-Restaurants can:
-- Update their menus.
-- Accept or reject orders.
-- Track payments.
+## Bounded Contexts & Business Capabilities
 
-Delivery drivers can:
-- View assigned deliveries.
-- Update their delivery status.
-- Mark orders as delivered.
+The system is designed around distinct bounded contexts that align with key business capabilities:
 
-## Architecture Overview
+### Restaurant Domain
+- **Capabilities**: Menu management, restaurant profile management, payment processing
+- **Service**: Restaurant Service
+- **Key Entities**: Restaurant, MenuItem, Payment
+- **Business Rules**: Restaurants can update menus, view order payments, manage availability
 
-### Microservices
-The system is decomposed into several microservices, each responsible for a distinct domain:
+### Order Domain  
+- **Capabilities**: Order creation, status management, pricing calculations
+- **Service**: Order Service
+- **Key Entities**: Order, OrderItem, OrderStatus
+- **Business Rules**: Orders track status changes, calculate total prices, maintain customer information
 
-- **OrderService:** Handles order creation, retrieval, and status updates.
-- **DeliveryService:** Manages driver assignment, delivery status updates, and real-time tracking.
-- **RestaurantService:** Provides restaurant details and supports menu updates.
-- **CustomerService:** Manages customer profiles and data.
-- **API Gateway:** Acts as a centralized entry point that receives HTTP/REST requests and routes them to the appropriate gRPC microservice.
+### Delivery Domain
+- **Capabilities**: Driver assignment, delivery tracking, status updates
+- **Service**: Delivery Service
+- **Key Entities**: Delivery, Driver, DeliveryStatus
+- **Business Rules**: Track delivery progress, manage driver locations, update order statuses
 
-### Communication
-- **Internal:** gRPC is used between microservices to ensure strongly-typed and efficient communication.
-- **External:** A FastAPI-based API Gateway exposes REST endpoints for client applications.
+### Integration Domain
+- **Capabilities**: API unification, protocol translation, client communication
+- **Service**: API Gateway
+- **Key Entities**: Requests/Responses, API Endpoints
+- **Business Rules**: Translate REST to gRPC, provide unified client access point
 
-### Diagram
+## Data Flow & Dependencies
+![Communication Diagram](communicationdiagram.png "Inspired Food Platform Communication Diagram")
 
-```
-          [Client]
-             │
-             ▼
-     [API Gateway (FastAPI)]
-             │
+### Key Dependencies:
+- **Order Service** depends on **Restaurant Service** for menu validation
+- **Delivery Service** depends on **Order Service** for order information
+- **API Gateway** depends on all services to route client requests
 
-┌──────────────┼──────────────┐
-▼              ▼              ▼
-[Order]      [Delivery]     [Restaurant]
-│              │
-└──────────────┘
-[Customer]
-```
+### Data Flow Examples:
+1. **Order Creation:**
+   - Client sends order request to Gateway
+   - Gateway forwards to Order Service
+   - Order Service creates order and returns confirmation
+   - Gateway returns REST response to client
 
-## gRPC Interfaces & Protobuf
+2. **Delivery Process:**
+   - Client requests driver assignment for order
+   - Gateway forwards to Delivery Service
+   - Delivery Service checks order with Order Service
+   - Delivery Service assigns driver and updates order status
+   - Gateway returns confirmation to client
 
-The `food_service.proto` file defines:
+## Bonus Challenge Implementation: Customer Information Management
 
-- **Messages** for orders, delivery, restaurant details, and customer data (e.g., `OrderItem`, `CreateOrderRequest`, `RestaurantResponse`, etc.).
-- **Services**:
-  - **OrderService:** Methods like `CreateOrder`, `GetOrder`, and `UpdateOrderStatus`.
-  - **DeliveryService:** Methods like `AssignDriver`, `UpdateDeliveryStatus`, `GetDelivery`, and `TrackDelivery`.
-  - **RestaurantService:** Methods like `GetRestaurant` and `UpdateMenu`.
-  - **CustomerService:** Methods like `GetCustomer` and `UpdateCustomer`.
+The implemented bonus challenge is **Customer Information Integration**, where instead of creating a separate Customer Service, customer information was integrated directly into the Order domain.
 
-gRPC provides a contract-first approach with Protobuf, ensuring efficient binary messaging and support for streaming (e.g., `TrackDelivery`).
+### Implementation Approach:
+- Added customer information fields (`customer_name`, `customer_email`, `customer_phone`) to the Order entity
+- Updated Protocol Buffer definitions to include these fields in the CreateOrderRequest
+- Modified the API Gateway to accept and validate customer details with orders
+- Ensured proper propagation of customer details throughout the delivery process
 
-## Microservices Implementation
+### Benefits of this approach:
+1. **Reduced complexity**: Eliminated need for an additional microservice
+2. **Improved performance**: No additional network calls to fetch customer information
+3. **Simplified data flow**: Order contains all necessary information for processing
+4. **Enhanced reliability**: No dependencies on external customer service availability
 
-### OrderService
+### Tradeoffs:
+1. Potential data duplication if customer information needs to be stored separately
+2. More complex order service responsibilities
+3. Limited customer profile management capabilities
 
-- **File:** `order_service.py`
-- **Description:** Handles creation, retrieval, and status updates for orders. It calculates the total amount for an order and assigns a unique order ID using UUIDs. Data is stored in an in-memory dictionary.
+## Running the Application
 
-### DeliveryService
+### Prerequisites
+- Docker and Docker Compose
+- Git
 
-- **File:** `delivery_service.py`
-- **Description:** Manages the assignment of drivers, updates delivery status, and supports real-time tracking via streaming. It calls the OrderService (via gRPC) to validate order existence and update order status when necessary.
-
-### RestaurantService
-
-- **File:** `restaurant_service.py`
-- **Description:** Maintains restaurant details and menus in memory. Offers methods to retrieve restaurant details and update menus.
-
-### CustomerService
-
-- **File:** `customer_service.py`
-- **Description:** Manages customer profiles using an in-memory database. Provides endpoints to retrieve and update customer information.
-
-### API Gateway
-
-- **File:** `gateway.py`
-- **Description:** Built with FastAPI, the API Gateway provides a centralized HTTP interface for clients. It translates HTTP requests into gRPC calls to the underlying microservices.
-- **Example Endpoints:**
-  - `GET /restaurants/{restaurant_id}` calls `RestaurantService.GetRestaurant`
-  - `POST /orders` calls `OrderService.CreateOrder`
-  - `GET /deliveries/{delivery_id}` calls `DeliveryService.GetDelivery`
-
-## Docker & Deployment
-
-- **Docker Compose:**  
-  The `docker-compose.yml` file orchestrates the containers for each microservice, the API Gateway, and the client.
-  
-  **Key Points:**
-  - Each microservice is built from its own Dockerfile.
-  - Ports are exposed to enable internal and external communication.
-  - All services share a common Docker network (`food-network`).
-
-**How to Run:**
-
-1. **Generate gRPC Code:**  
-   ```bash
-   python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. food_service.proto
+### Setup Instructions
+1. Clone the repository
+   ```
+   git clone https://github.com/yourusername/inspiredfoodplatform.git
+   cd inspiredfoodplatform
    ```
 
-2. **Build and Run Containers:**
-   ```bash
-   docker compose up --build
+2. Build and run the services
+   ```
+   docker-compose up --build
    ```
 
-3. **Access the API Gateway:**
-   Once running, the API Gateway will be available at http://localhost:50050.
+3. The API will be available at:
+   - API Gateway: http://localhost:50050
+   - The demo client will automatically run to demonstrate the system
+
+### Available Endpoints
+
+#### Restaurant Endpoints
+- `GET /restaurants/{restaurant_id}` - Get restaurant information
+- `PUT /restaurants/{restaurant_id}/menu` - Update restaurant menu
+- `GET /restaurants/{restaurant_id}/payments` - Get restaurant payments
+
+#### Order Endpoints
+- `POST /orders` - Create a new order
+- `GET /orders/{order_id}` - Get order information
+- `PUT /orders/{order_id}/status` - Update order status
+
+#### Delivery Endpoints
+- `POST /deliveries` - Assign driver to order
+- `GET /deliveries/{delivery_id}` - Get delivery information
+- `PUT /deliveries/{delivery_id}/status` - Update delivery status
 
 ## Testing
 
-### Manual Testing
-- **Using cURL/HTTP Clients:**
+The application includes a demo client that tests all major functionality:
+1. Restaurant information retrieval
+2. Order creation with customer details
+3. Order status updates
+4. Driver assignment and tracking
+5. Delivery status updates
+6. Payment verification
 
-  ```bash
-  curl http://localhost:50050/restaurants/restaurant456
-  ```
+To run just the tests:
+```
+docker-compose run client
+```
 
-  ```bash
-  curl -X POST -H "Content-Type: application/json" -d '{"customer_id":"customer123","restaurant_id":"restaurant456","items":[]}' http://localhost:50050/orders
-  ```
+## Architecture Decisions
 
-### Automated Testing
-- **Integration Test:**
-  The provided client.py script demonstrates a full workflow (browsing menus, placing orders, tracking delivery, etc.).
+### Why Microservices?
+- **Scalability**: Each service can scale independently based on demand
+- **Team organization**: Separate teams can own different services
+- **Technology flexibility**: Different services can use different technologies if needed
+- **Resilience**: Failure in one service doesn't bring down the entire system
+- **Deployment independence**: Services can be deployed independently
 
-## Design Choices & Challenges
+### Why gRPC for Service Communication?
+- **Performance**: Efficient binary serialization with Protocol Buffers
+- **Strong typing**: Contract-first approach with clear interfaces
+- **Bi-directional streaming**: Supports advanced communication patterns
+- **Language agnostic**: Services can be implemented in different languages
 
-### Design Choices
-- **Microservice Decomposition:**
-  Each service is responsible for a single bounded context (orders, delivery, restaurant, customer) which improves cohesion and minimizes coupling.
-- **gRPC Communication:**
-  gRPC offers a high-performance, strongly typed, and efficient communication protocol between services.
-- **API Gateway:**
-  Centralizes the external API and abstracts the underlying microservices from the client.
-
-### Challenges
-- **Service Discovery:**
-  Ensuring Docker containers correctly resolve each other by service name on the shared network.
-- **Port Management:**
-  Avoiding conflicts when exposing multiple service ports.
-- **Partial Failures:**
-  Handling situations where one service may be temporarily down without crashing the entire system.
-
-## Possible Improvements
-
-- **Persistence:**
-  Move from in-memory storage to dedicated databases (SQLite, PostgreSQL, etc.) for each service.
-- **Event-Driven Communication:**
-  Introduce an event bus (RabbitMQ or Redis Pub/Sub) for decoupling and asynchronous processing (e.g., order events triggering delivery processing).
-- **Enhanced Security:**
-  Implement authentication, authorization, and secure communications (SSL/TLS).
-- **Scalability:**
-  Scale the API Gateway and microservices independently using container orchestration platforms like Kubernetes.
-
-## Conclusion
-
-InspiredFoodPlatform is a robust microservices-based solution that meets the core requirements for an online order and delivery platform. The system leverages:
-- gRPC for efficient inter-service communication,
-- Docker Compose for orchestration, and
-- FastAPI as an API Gateway for client interactions.
-
-This design supports scalability, modularity, and easy maintenance, and offers a solid foundation for future enhancements such as persistent storage and event-driven communication.
-
----
-
-Thank you for reviewing the InspiredFoodPlatform project!
+### Why REST for Client API?
+- **Widespread adoption**: Easy integration with various client platforms
+- **Developer familiarity**: Most frontend developers are familiar with REST
+- **Debugging**: Easier to test and debug using standard HTTP tools

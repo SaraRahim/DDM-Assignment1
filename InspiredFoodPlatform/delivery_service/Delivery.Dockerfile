@@ -11,8 +11,11 @@ COPY delivery_service/delivery_service_pb2_grpc.py .
 COPY delivery_service/delivery_service.py .
 
 # Also need order service protos for cross-service communication
-COPY order_service/order_service_pb2.py .
-COPY order_service/order_service_pb2_grpc.py .
+COPY order_service/order_service_pb2.py order_service/
+COPY order_service/order_service_pb2_grpc.py order_service/
+
+RUN sed -i 's/import order_service_pb2/from order_service import order_service_pb2/g' order_service/order_service_pb2_grpc.py
+
 
 EXPOSE 50052
 

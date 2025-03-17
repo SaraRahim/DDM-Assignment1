@@ -1,20 +1,31 @@
 import os
+import sys
+
+# Add project root and service directories to Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, project_root)
+sys.path.insert(0, os.path.join(project_root, 'order_service'))
+sys.path.insert(0, os.path.join(project_root, 'restaurant_service'))
+sys.path.insert(0, os.path.join(project_root, 'delivery_service'))
+
 import logging
 from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel
 from typing import List, Optional
 import grpc
 
-# Change these imports
-import order_service_pb2
-import order_service_pb2_grpc
-import delivery_service_pb2
-import delivery_service_pb2_grpc
-import restaurant_service_pb2
-import restaurant_service_pb2_grpc
-import customer_service_pb2
-import customer_service_pb2_grpc
-from datetime import datetime
+# Modify these imports to be more explicit
+from order_service import order_service_pb2
+from order_service import order_service_pb2_grpc
+from restaurant_service import restaurant_service_pb2
+from restaurant_service import restaurant_service_pb2_grpc
+from delivery_service import delivery_service_pb2
+from delivery_service import delivery_service_pb2_grpc
+
+# Rest of the file remains the same
+# Rest of the file remains the same
+
+# Rest of your gateway implementation remains the same
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -24,7 +35,7 @@ app = FastAPI(title="Inspired Food API Gateway")
 ORDER_SERVICE_ADDR = os.environ.get('ORDER_SERVICE_ADDR', 'order_service:50051')
 DELIVERY_SERVICE_ADDR = os.environ.get('DELIVERY_SERVICE_ADDR', 'delivery_service:50052')
 RESTAURANT_SERVICE_ADDR = os.environ.get('RESTAURANT_SERVICE_ADDR', 'restaurant_service:50053')
-CUSTOMER_SERVICE_ADDR = os.environ.get('CUSTOMER_SERVICE_ADDR', 'customer_service:50054')
+# Removed CUSTOMER_SERVICE_ADDR
 
 # Create stubs for each service
 order_channel = grpc.insecure_channel(ORDER_SERVICE_ADDR)
@@ -35,9 +46,7 @@ delivery_stub = delivery_service_pb2_grpc.DeliveryServiceStub(delivery_channel)
 
 restaurant_channel = grpc.insecure_channel(RESTAURANT_SERVICE_ADDR)
 restaurant_stub = restaurant_service_pb2_grpc.RestaurantServiceStub(restaurant_channel)
-
-customer_channel = grpc.insecure_channel(CUSTOMER_SERVICE_ADDR)
-customer_stub = customer_service_pb2_grpc.CustomerServiceStub(customer_channel)
+# Removed customer_stub
 
 # Define Pydantic models for request/response validation
 class OrderItemModel(BaseModel):
@@ -47,8 +56,11 @@ class OrderItemModel(BaseModel):
     price: float
     customizations: List[str] = []
 
+# Updated to include customer details directly
 class CreateOrderModel(BaseModel):
-    customer_id: str
+    customer_name: str           # New field
+    customer_email: str          # New field
+    customer_phone: Optional[str] = None  # New field
     restaurant_id: str
     items: List[OrderItemModel]
     delivery_address: str
@@ -67,7 +79,7 @@ class UpdateMenuModel(BaseModel):
 
 # API Endpoints
 
-# Restaurant endpoints
+# Restaurant endpoints - unchanged
 @app.get("/restaurants/{restaurant_id}")
 async def get_restaurant(restaurant_id: str):
     request = restaurant_service_pb2.GetRestaurantRequest(restaurant_id=restaurant_id)
@@ -163,7 +175,7 @@ async def get_restaurant_payments(restaurant_id: str):
         else:
             raise HTTPException(status_code=500, detail=str(e))
 
-# Order endpoints
+# Updated Order endpoints
 @app.post("/orders")
 async def create_order(order_data: CreateOrderModel):
     # Create order items for the gRPC request
@@ -178,9 +190,11 @@ async def create_order(order_data: CreateOrderModel):
         )
         items.append(order_item)
     
-    # Create the request
+    # Create the request with direct customer info
     request = order_service_pb2.CreateOrderRequest(
-        customer_id=order_data.customer_id,
+        customer_name=order_data.customer_name,       # New field
+        customer_email=order_data.customer_email,     # New field
+        customer_phone=order_data.customer_phone or "",  # New field
         restaurant_id=order_data.restaurant_id,
         items=items,
         delivery_address=order_data.delivery_address,
@@ -205,7 +219,9 @@ async def create_order(order_data: CreateOrderModel):
             
         return {
             "order_id": response.order_id,
-            "customer_id": response.customer_id,
+            "customer_name": response.customer_name,  # Updated from customer_id
+            "customer_email": response.customer_email,  # New field
+            "customer_phone": response.customer_phone,  # New field
             "restaurant_id": response.restaurant_id,
             "items": result_items,
             "delivery_address": response.delivery_address,
@@ -226,7 +242,7 @@ async def get_order(order_id: str):
     try:
         response = order_stub.GetOrder(request)
         
-        # Convert the response to a dictionary (similar to create_order response)
+        # Convert the response to a dictionary
         result_items = []
         for item in response.items:
             item_dict = {
@@ -241,7 +257,9 @@ async def get_order(order_id: str):
             
         return {
             "order_id": response.order_id,
-            "customer_id": response.customer_id,
+            "customer_name": response.customer_name,  # Updated
+            "customer_email": response.customer_email,  # New
+            "customer_phone": response.customer_phone,  # New
             "restaurant_id": response.restaurant_id,
             "items": result_items,
             "delivery_address": response.delivery_address,
@@ -256,6 +274,7 @@ async def get_order(order_id: str):
         logging.error(f"Order Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# The rest remains unchanged
 @app.put("/orders/{order_id}/status")
 async def update_order_status(order_id: str, status: int = Body(..., embed=True)):
     request = order_service_pb2.UpdateOrderStatusRequest(
@@ -275,7 +294,7 @@ async def update_order_status(order_id: str, status: int = Body(..., embed=True)
         logging.error(f"Order Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Delivery endpoints
+# Delivery endpoints - unchanged
 @app.post("/deliveries")
 async def assign_driver(order_id: str = Body(...), driver_id: str = Body(...)):
     request = delivery_service_pb2.AssignDriverRequest(
@@ -365,26 +384,7 @@ async def update_delivery_status(
         logging.error(f"Delivery Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# Customer endpoints
-@app.get("/customers/{customer_id}")
-async def get_customer(customer_id: str):
-    request = customer_service_pb2.GetCustomerRequest(customer_id=customer_id)
-    
-    try:
-        response = customer_stub.GetCustomer(request)
-        
-        return {
-            "customer_id": response.customer_id,
-            "name": response.name,
-            "email": response.email,
-            "phone": response.phone,
-            "delivery_addresses": list(response.delivery_addresses)
-        }
-    except grpc.RpcError as e:
-        logging.error(f"Customer Service error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-# Root endpoint
+# Updated Root endpoint - removed customer service
 @app.get("/")
 async def root():
     return {
@@ -392,8 +392,8 @@ async def root():
         "services": {
             "order_service": ORDER_SERVICE_ADDR,
             "delivery_service": DELIVERY_SERVICE_ADDR,
-            "restaurant_service": RESTAURANT_SERVICE_ADDR,
-            "customer_service": CUSTOMER_SERVICE_ADDR
+            "restaurant_service": RESTAURANT_SERVICE_ADDR
+            # Removed customer_service
         }
     }
 

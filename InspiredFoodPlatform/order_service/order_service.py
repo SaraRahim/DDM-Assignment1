@@ -20,14 +20,20 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
         # Calculate total amount
         total_amount = sum(item.price * item.quantity for item in request.items)
         
+        # Generate a customer ID if not already present
+        customer_id = str(uuid.uuid4())
+        
         # Store order data
         self.orders[order_id] = {
             'order_id': order_id,
-            'customer_id': request.customer_id,
+            'customer_id': customer_id,
+            'customer_name': request.customer_name,
+            'customer_email': request.customer_email,
+            'customer_phone': request.customer_phone,
             'restaurant_id': request.restaurant_id,
             'items': list(request.items),
             'delivery_address': request.delivery_address,
-            'special_instructions': request.special_instructions,
+            'special_instructions': request.special_instructions or '',
             'status': order_service_pb2.ORDER_PENDING,
             'total_amount': total_amount,
             'created_at': now,
@@ -35,16 +41,19 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             'estimated_delivery_time': str(datetime.now().timestamp() + 3600)  # 1 hour from now
         }
         
-        logging.info(f"Created order {order_id} for customer {request.customer_id}")
+        # Log order creation with generated customer ID
+        logging.info(f"Created order {order_id} for customer {customer_id}")
         
         # Build response
         return order_service_pb2.OrderResponse(
             order_id=order_id,
-            customer_id=request.customer_id,
+            customer_name=request.customer_name,
+            customer_email=request.customer_email,
+            customer_phone=request.customer_phone,
             restaurant_id=request.restaurant_id,
             items=request.items,
             delivery_address=request.delivery_address,
-            special_instructions=request.special_instructions,
+            special_instructions=request.special_instructions or '',
             status=order_service_pb2.ORDER_PENDING,
             total_amount=total_amount,
             created_at=now,
@@ -69,7 +78,9 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
         # Build response
         return order_service_pb2.OrderResponse(
             order_id=order['order_id'],
-            customer_id=order['customer_id'],
+            customer_name=order['customer_name'],
+            customer_email=order['customer_email'],
+            customer_phone=order['customer_phone'],
             restaurant_id=order['restaurant_id'],
             items=order['items'],
             delivery_address=order['delivery_address'],
@@ -100,7 +111,9 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
         # Build response
         return order_service_pb2.OrderResponse(
             order_id=order['order_id'],
-            customer_id=order['customer_id'],
+            customer_name=order['customer_name'],
+            customer_email=order['customer_email'],
+            customer_phone=order['customer_phone'],
             restaurant_id=order['restaurant_id'],
             items=order['items'],
             delivery_address=order['delivery_address'],

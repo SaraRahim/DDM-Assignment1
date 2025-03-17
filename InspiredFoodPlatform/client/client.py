@@ -2,6 +2,7 @@ import requests
 import json
 import time
 import sys
+import traceback
 
 API_BASE_URL = "http://api_gateway:50050"
 
@@ -27,31 +28,90 @@ def get_restaurant(restaurant_id):
         print(f"Error retrieving restaurant: {e}")
         return None
 
-def create_order(customer_id, restaurant_id, items, delivery_address, special_instructions=None):
+def create_order(customer_name, customer_email, customer_phone, restaurant_id, items, delivery_address, special_instructions=None):
     print(f"\n=== Creating Order ===")
     
+    # Prepare the payload exactly as per the service requirements
     payload = {
-        "customer_id": customer_id,
+        "customer_name": customer_name,
+        "customer_email": customer_email,
+        "customer_phone": customer_phone,
         "restaurant_id": restaurant_id,
         "items": items,
         "delivery_address": delivery_address
     }
     
+    # Add special instructions if provided
     if special_instructions:
         payload["special_instructions"] = special_instructions
     
+    # For debugging: add customer ID if needed
+    if not any(payload.get(key) for key in ['customer_id', 'customer_name', 'customer_email', 'customer_phone']):
+        payload['customer_name'] = 'Unknown Customer'
+    
     try:
-        response = requests.post(f"{API_BASE_URL}/orders", json=payload)
+        # Enable very verbose logging
+        print("Full Request Payload:")
+        print(json.dumps(payload, indent=2))
+        
+        # Add headers to help with debugging
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Debug-Mode': 'true'
+        }
+        
+        # Perform the request with detailed error handling
+        response = requests.post(
+            f"{API_BASE_URL}/orders", 
+            json=payload, 
+            headers=headers
+        )
+        
+        # Log full response details
+        print("\n=== Full Response Details ===")
+        print(f"Status Code: {response.status_code}")
+        print("Response Headers:")
+        for key, value in response.headers.items():
+            print(f"{key}: {value}")
+        
+        # Try to parse response content
+        try:
+            response_content = response.json()
+            print("\nResponse Content:")
+            print(json.dumps(response_content, indent=2))
+        except ValueError:
+            print("\nResponse Content (non-JSON):")
+            print(response.text)
+        
+        # Detailed error handling
+        if response.status_code >= 400:
+            print("\n=== Error Details ===")
+            print(f"Status Code: {response.status_code}")
+            print("Response Body:", response.text)
+            return None
+        
+        # Parse successful response
         data = response.json()
         
-        print(f"Order created successfully!")
-        print(f"Order ID: {data['order_id']}")
-        print(f"Status: {data['status']}")
-        print(f"Total Amount: ${data['total_amount']}")
+        print(f"\n=== Order Created Successfully! ===")
+        print("Returned Data Keys:", list(data.keys()))
+        
+        # Safely extract order details
+        print(f"Order ID: {data.get('order_id', 'N/A')}")
+        print(f"Status: {data.get('status', 'N/A')}")
+        print(f"Total Amount: ${data.get('total_amount', 'N/A')}")
         
         return data
+    
     except requests.exceptions.RequestException as e:
-        print(f"Error creating order: {e}")
+        print(f"\n=== Request Error ===")
+        print(f"Error details: {e}")
+        traceback.print_exc()
+        return None
+    except Exception as e:
+        print(f"\n=== Unexpected Error ===")
+        print(f"Error details: {e}")
+        traceback.print_exc()
         return None
 
 def get_order(order_id):
@@ -59,13 +119,16 @@ def get_order(order_id):
     try:
         response = requests.get(f"{API_BASE_URL}/orders/{order_id}")
         data = response.json()
-        
+
         print(f"Order ID: {data['order_id']}")
-        print(f"Customer ID: {data['customer_id']}")
+        print(f"Customer Name: {data['customer_name']}")
+        print(f"Customer Email: {data['customer_email']}")
+        print(f"Customer Phone: {data['customer_phone']}")
         print(f"Restaurant ID: {data['restaurant_id']}")
+        print(f"Delivery Address: {data['delivery_address']}")
         print(f"Status: {data['status']}")
         print(f"Total Amount: ${data['total_amount']}")
-        print(f"Items:")
+        print("Items:")
         
         for item in data['items']:
             print(f"  - {item['quantity']}x {item['name']} (${item['price']})")
@@ -153,26 +216,6 @@ def update_delivery_status(delivery_id, status, current_location):
         print(f"Error updating delivery status: {e}")
         return None
 
-def get_customer(customer_id):
-    print(f"\n=== Retrieving Customer ===")
-    try:
-        response = requests.get(f"{API_BASE_URL}/customers/{customer_id}")
-        data = response.json()
-        
-        print(f"Customer ID: {data['customer_id']}")
-        print(f"Name: {data['name']}")
-        print(f"Email: {data['email']}")
-        print(f"Phone: {data['phone']}")
-        print(f"Delivery Addresses:")
-        
-        for address in data['delivery_addresses']:
-            print(f"  - {address}")
-        
-        return data
-    except requests.exceptions.RequestException as e:
-        print(f"Error retrieving customer: {e}")
-        return None
-
 def get_restaurant_payments(restaurant_id):
     print(f"\n=== Retrieving Payments for Restaurant ===")
     try:
@@ -200,7 +243,7 @@ def get_restaurant_payments(restaurant_id):
 def run():
     print("=== Inspired Food Platform Client Demo ===")
     
-    # Check if API Gateway is available
+    # First, check API Gateway availability
     try:
         response = requests.get(f"{API_BASE_URL}/")
         print(f"Connected to API Gateway: {response.json()['message']}")
@@ -208,17 +251,12 @@ def run():
         print(f"Error connecting to API Gateway: {e}")
         sys.exit(1)
     
-    # Get restaurant
+    # Retrieve restaurant details
     restaurant = get_restaurant("restaurant456")
     if not restaurant:
         sys.exit(1)
     
-    # Get customer
-    customer = get_customer("customer123")
-    if not customer:
-        sys.exit(1)
-    
-    # Create an order
+    # Prepare order items based on the restaurant's menu
     order_items = [
         {
             "item_id": restaurant['menu_items'][0]['item_id'],
@@ -236,11 +274,14 @@ def run():
         }
     ]
     
+    # Create an order
     order = create_order(
-        customer_id=customer['customer_id'],
+        customer_name="John Doe",
+        customer_email="john.doe@example.com",
+        customer_phone="555-123-4567",
         restaurant_id=restaurant['restaurant_id'],
         items=order_items,
-        delivery_address=customer['delivery_addresses'][0],
+        delivery_address="123 Customer Lane, Foodville",
         special_instructions="Please ring doorbell twice"
     )
     
