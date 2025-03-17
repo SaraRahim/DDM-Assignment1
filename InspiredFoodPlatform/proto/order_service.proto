@@ -6,6 +6,7 @@ service OrderService {
   rpc CreateOrder(CreateOrderRequest) returns (OrderResponse);
   rpc GetOrder(GetOrderRequest) returns (OrderResponse);
   rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (OrderResponse);
+  rpc RestaurantOrderResponse (RestaurantOrderResponseRequest) returns (RestaurantOrderResponseResponse);
 }
 
 message CreateOrderRequest {
@@ -35,6 +36,23 @@ message OrderItem {
   repeated string customizations = 5;
 }
 
+message RestaurantOrderResponseRequest {
+  string restaurant_id = 1;
+  string order_id = 2;
+  bool accepted = 3;
+  string rejection_reason = 4;
+}
+
+// Response for restaurant accept/reject
+message RestaurantOrderResponseResponse {
+  string order_id = 1;
+  OrderStatus status = 2;
+  string updated_at = 3;
+  string rejection_reason = 4;
+}
+
+
+
 message OrderResponse {
   string order_id = 1;             
   string customer_name = 2;
@@ -53,10 +71,12 @@ message OrderResponse {
 
 enum OrderStatus {
   ORDER_UNKNOWN = 0;
-  ORDER_PENDING = 1;
-  ORDER_CONFIRMED = 2;
-  ORDER_PREPARING = 3;
-  ORDER_OUT_FOR_DELIVERY = 4;
-  ORDER_DELIVERED = 5;
-  ORDER_CANCELLED = 6;
+  ORDER_PENDING = 1;      // Initial state when created
+  ORDER_CONFIRMED = 2;    // Restaurant accepted the order
+  ORDER_REJECTED = 3;     // Restaurant rejected the order
+  ORDER_PREPARING = 4;    // Restaurant is preparing the order
+  ORDER_READY = 5;        // Ready for pickup by delivery
+  ORDER_OUT_FOR_DELIVERY = 6;
+  ORDER_DELIVERED = 7;
+  ORDER_CANCELLED = 8;
 }

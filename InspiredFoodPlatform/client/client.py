@@ -215,6 +215,44 @@ def update_delivery_status(delivery_id, status, current_location):
     except requests.exceptions.RequestException as e:
         print(f"Error updating delivery status: {e}")
         return None
+    
+def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_reason=None):
+    """
+    Function for restaurant to accept or reject an order
+    """
+    print(f"\n=== Restaurant {'Accepting' if accepted else 'Rejecting'} Order ===")
+    payload = {
+        "accepted": accepted
+    }
+    if not accepted and rejection_reason:
+        payload["rejection_reason"] = rejection_reason
+        
+    try:
+        response = requests.post(
+            f"{API_BASE_URL}/restaurants/{restaurant_id}/orders/{order_id}/response", 
+            json=payload
+        )
+        
+        # Check for errors
+        if response.status_code >= 400:
+            print(f"Error: {response.status_code} - {response.text}")
+            return None
+            
+        data = response.json()
+        
+        if accepted:
+            print(f"Order accepted by restaurant!")
+        else:
+            print(f"Order rejected by restaurant. Reason: {data.get('rejection_reason', 'No reason provided')}")
+            
+        print(f"Order ID: {data['order_id']}")
+        print(f"New Status: {data['status']}")
+        print(f"Updated at: {data['updated_at']}")
+        
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Error responding to order: {e}")
+        return None
 
 def get_restaurant_payments(restaurant_id):
     print(f"\n=== Retrieving Payments for Restaurant ===")
@@ -288,60 +326,71 @@ def run():
     if not order:
         sys.exit(1)
     
-    # Simulate restaurant confirming order
-    time.sleep(1)
-    update_order_status(order['order_id'], 2)  # ORDER_CONFIRMED
+    # Restaurant responds to order
+    response = restaurant_respond_to_order(
+        restaurant_id=restaurant['restaurant_id'],
+        order_id=order['order_id'],
+        accepted=True  # Change to False to test rejection
+    )
     
-    # Simulate restaurant preparing order
-    time.sleep(1)
-    update_order_status(order['order_id'], 3)  # ORDER_PREPARING
-    
-    # Assign a driver for delivery
-    delivery = assign_driver(order['order_id'], "driver789")
-    if not delivery:
+    if not response:
         sys.exit(1)
-    
-    # Get delivery details
-    time.sleep(1)
-    get_delivery(delivery['delivery_id'])
-    
-    # Update delivery status - driver picked up the order
-    time.sleep(1)
-    update_delivery_status(
-        delivery_id=delivery['delivery_id'],
-        status=2,  # DELIVERY_PICKED_UP
-        current_location="At restaurant"
-    )
-    
-    # Get updated order status
-    time.sleep(1)
-    get_order(order['order_id'])
-    
-    # Update delivery status - driver is on the way
-    time.sleep(1)
-    update_delivery_status(
-        delivery_id=delivery['delivery_id'],
-        status=3,  # DELIVERY_IN_PROGRESS
-        current_location="Halfway to customer's address"
-    )
-    
-    # Update delivery status - order delivered
-    time.sleep(1)
-    update_delivery_status(
-        delivery_id=delivery['delivery_id'],
-        status=4,  # DELIVERY_DELIVERED
-        current_location="At customer's address"
-    )
-    
-    # Get final order status
-    time.sleep(1)
-    get_order(order['order_id'])
-    
-    # Get restaurant payments
-    time.sleep(1)
-    get_restaurant_payments("restaurant456")
-    
-    print("\n=== Demo completed successfully! ===")
+        
+    # Only continue with preparation if order was accepted
+    if response['status'] == "ORDER_CONFIRMED":
+        # Simulate restaurant preparing order
+        time.sleep(1)
+        update_order_status(order['order_id'], 4)  # ORDER_PREPARING
+        
+        # Assign a driver for delivery
+        delivery = assign_driver(order['order_id'], "driver789")
+        if not delivery:
+            sys.exit(1)
+        
+        # Get delivery details
+        time.sleep(1)
+        get_delivery(delivery['delivery_id'])
+        
+        # Update delivery status - driver picked up the order
+        time.sleep(1)
+        update_delivery_status(
+            delivery_id=delivery['delivery_id'],
+            status=2,  # DELIVERY_PICKED_UP
+            current_location="At restaurant"
+        )
+        
+        # Get updated order status
+        time.sleep(1)
+        get_order(order['order_id'])
+        
+        # Update delivery status - driver is on the way
+        time.sleep(1)
+        update_delivery_status(
+            delivery_id=delivery['delivery_id'],
+            status=3,  # DELIVERY_IN_PROGRESS
+            current_location="Halfway to customer's address"
+        )
+        
+        # Update delivery status - order delivered
+        time.sleep(1)
+        update_delivery_status(
+            delivery_id=delivery['delivery_id'],
+            status=4,  # DELIVERY_DELIVERED
+            current_location="At customer's address"
+        )
+        
+        # Get final order status
+        time.sleep(1)
+        get_order(order['order_id'])
+        
+        # Get restaurant payments
+        time.sleep(1)
+        get_restaurant_payments("restaurant456")
+        
+        print("\n=== Demo completed successfully! ===")
+    else:
+        print("Order was rejected by restaurant. Ending demo.")
+        sys.exit(0)
 
 if __name__ == "__main__":
     # Wait a moment for services to be ready

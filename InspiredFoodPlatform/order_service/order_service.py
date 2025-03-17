@@ -61,6 +61,58 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             estimated_delivery_time=str(datetime.now().timestamp() + 3600)
         )
     
+    # Add this method to your OrderServicer class in order_service.py
+
+    def RestaurantOrderResponse(self, request, context):
+
+        order_id = request.order_id
+        restaurant_id = request.restaurant_id
+        accepted = request.accepted
+        rejection_reason = request.rejection_reason
+    
+    # Check if order exists
+        if order_id not in self.orders:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            context.set_details(f"Order {order_id} not found")
+            return order_service_pb2.RestaurantOrderResponseResponse()
+    
+    # Check if order belongs to this restaurant
+        order = self.orders[order_id]
+        if order["restaurant_id"] != restaurant_id:
+            context.set_code(grpc.StatusCode.PERMISSION_DENIED)
+            context.set_details(f"Order {order_id} does not belong to restaurant {restaurant_id}")
+            return order_service_pb2.RestaurantOrderResponseResponse()
+    
+    # Check if order is in PENDING state
+        if order["status"] != order_service_pb2.ORDER_PENDING:
+            context.set_code(grpc.StatusCode.FAILED_PRECONDITION)
+            context.set_details(f"Order {order_id} is not in PENDING state")
+            return order_service_pb2.RestaurantOrderResponseResponse()
+    
+    # Update order status based on restaurant response
+        now = datetime.now().isoformat()
+        new_status = order_service_pb2.ORDER_CONFIRMED if accepted else order_service_pb2.ORDER_REJECTED
+    
+        order["status"] = new_status
+        order["updated_at"] = now
+    
+        if not accepted:
+            order["rejection_reason"] = rejection_reason
+        
+        logging.info(f"Restaurant {restaurant_id} {'accepted' if accepted else 'rejected'} order {order_id}")
+    
+    # Build response
+        response = order_service_pb2.RestaurantOrderResponseResponse(
+            order_id=order_id,
+            status=new_status,
+            updated_at=now
+        )
+    
+        if not accepted:
+            response.rejection_reason = rejection_reason
+        
+        return response
+    
     def GetOrder(self, request, context):
         order_id = request.order_id
         

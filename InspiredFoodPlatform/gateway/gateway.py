@@ -107,6 +107,54 @@ async def get_restaurant(restaurant_id: str):
     except grpc.RpcError as e:
         logging.error(f"Restaurant Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+# Add this endpoint to your gateway.py file
+
+@app.post("/restaurants/{restaurant_id}/orders/{order_id}/response")
+async def restaurant_order_response(
+    restaurant_id: str, 
+    order_id: str, 
+    response_data: dict = Body(...)
+):
+    """
+    Endpoint for restaurants to accept or reject orders
+    """
+    accepted = response_data.get("accepted", False)
+    rejection_reason = response_data.get("rejection_reason", "") if not accepted else ""
+    
+    # Create the gRPC request
+    request = order_service_pb2.RestaurantOrderResponseRequest(
+        restaurant_id=restaurant_id,
+        order_id=order_id,
+        accepted=accepted,
+        rejection_reason=rejection_reason
+    )
+    
+    try:
+        # Call the Order Service
+        response = order_stub.RestaurantOrderResponse(request)
+        
+        # Convert response to JSON
+        result = {
+            "order_id": response.order_id,
+            "status": order_service_pb2.OrderStatus.Name(response.status),
+            "updated_at": response.updated_at
+        }
+        
+        if not accepted:
+            result["rejection_reason"] = response.rejection_reason
+            
+        return result
+    except grpc.RpcError as e:
+        status_code = e.code()
+        if status_code == grpc.StatusCode.NOT_FOUND:
+            raise HTTPException(status_code=404, detail=str(e.details()))
+        elif status_code == grpc.StatusCode.PERMISSION_DENIED:
+            raise HTTPException(status_code=403, detail=str(e.details()))
+        elif status_code == grpc.StatusCode.FAILED_PRECONDITION:
+            raise HTTPException(status_code=400, detail=str(e.details()))
+        else:
+            raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/restaurants/{restaurant_id}/menu")
 async def update_menu(restaurant_id: str, menu_data: UpdateMenuModel):

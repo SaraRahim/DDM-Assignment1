@@ -49,6 +49,11 @@ class OrderServiceStub(object):
                 request_serializer=order__service__pb2.UpdateOrderStatusRequest.SerializeToString,
                 response_deserializer=order__service__pb2.OrderResponse.FromString,
                 _registered_method=True)
+        self.RestaurantOrderResponse = channel.unary_unary(
+                '/order.OrderService/RestaurantOrderResponse',
+                request_serializer=order__service__pb2.RestaurantOrderResponseRequest.SerializeToString,
+                response_deserializer=order__service__pb2.RestaurantOrderResponseResponse.FromString,
+                _registered_method=True)
 
 
 class OrderServiceServicer(object):
@@ -72,6 +77,12 @@ class OrderServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def RestaurantOrderResponse(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_OrderServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -89,6 +100,11 @@ def add_OrderServiceServicer_to_server(servicer, server):
                     servicer.UpdateOrderStatus,
                     request_deserializer=order__service__pb2.UpdateOrderStatusRequest.FromString,
                     response_serializer=order__service__pb2.OrderResponse.SerializeToString,
+            ),
+            'RestaurantOrderResponse': grpc.unary_unary_rpc_method_handler(
+                    servicer.RestaurantOrderResponse,
+                    request_deserializer=order__service__pb2.RestaurantOrderResponseRequest.FromString,
+                    response_serializer=order__service__pb2.RestaurantOrderResponseResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -172,6 +188,33 @@ class OrderService(object):
             '/order.OrderService/UpdateOrderStatus',
             order__service__pb2.UpdateOrderStatusRequest.SerializeToString,
             order__service__pb2.OrderResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def RestaurantOrderResponse(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/order.OrderService/RestaurantOrderResponse',
+            order__service__pb2.RestaurantOrderResponseRequest.SerializeToString,
+            order__service__pb2.RestaurantOrderResponseResponse.FromString,
             options,
             channel_credentials,
             insecure,
