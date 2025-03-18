@@ -16,7 +16,7 @@ from order_service import order_service_pb2_grpc
 
 class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
     def __init__(self):
-        self.deliveries = {}  
+        self.deliveries = {} # in memory storage for orders
         
         order_service_addr = os.environ.get('ORDER_SERVICE_ADDR', 'order_service:50051')
         try:
@@ -26,6 +26,7 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         except Exception as e:
             logging.error(f"Failed to connect to Order Service: {e}")
     
+    # assign delivery driver
     def AssignDriver(self, request, context):
         order_id = request.order_id
         driver_id = request.driver_id
@@ -53,7 +54,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
                 'assigned_at': now,
                 'picked_up_at': None,
                 'delivered_at': None,
-                'estimated_delivery_time': str(datetime.now().timestamp() + 1800) 
             }
             
             logging.info(f"Assigned driver {driver_id} to order {order_id}, delivery {delivery_id}")
@@ -73,7 +73,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
                 status=delivery_service_pb2.DELIVERY_ASSIGNED,
                 current_location='Driver starting location',
                 assigned_at=now,
-                estimated_delivery_time=str(datetime.now().timestamp() + 1800)
             )
             
         except grpc.RpcError as e:
@@ -82,6 +81,7 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             context.set_details(f"Error communicating with Order service: {e.details() if hasattr(e, 'details') else str(e)}")
             return delivery_service_pb2.DeliveryResponse()
     
+    # get deliverys
     def GetDelivery(self, request, context):
         delivery_id = request.delivery_id
         
@@ -102,7 +102,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             status=delivery['status'],
             current_location=delivery['current_location'],
             assigned_at=delivery['assigned_at'],
-            estimated_delivery_time=delivery['estimated_delivery_time']
         )
         
         if delivery['picked_up_at']:
@@ -112,6 +111,7 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         
         return response
     
+    # update delivery status 
     def UpdateDeliveryStatus(self, request, context):
         delivery_id = request.delivery_id
         
@@ -160,7 +160,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             status=delivery['status'],
             current_location=delivery['current_location'],
             assigned_at=delivery['assigned_at'],
-            estimated_delivery_time=delivery['estimated_delivery_time']
         )
         
         if delivery['picked_up_at']:
@@ -170,6 +169,7 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         
         return response
     
+    # track deliverys
     def TrackDelivery(self, request, context):
         delivery_id = request.delivery_id
         
@@ -185,11 +185,11 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             driver_id=delivery['driver_id'],
             current_location=delivery['current_location'],
             status=delivery['status'],
-            estimated_arrival_time=delivery['estimated_delivery_time']
         )
         
         yield response
-        
+
+# starting the gRPC server       
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     delivery_service_pb2_grpc.add_DeliveryServiceServicer_to_server(DeliveryServicer(), server)

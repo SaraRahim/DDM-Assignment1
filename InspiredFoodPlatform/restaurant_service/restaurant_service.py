@@ -9,7 +9,7 @@ import restaurant_service_pb2_grpc
 class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
     def __init__(self):
         self.restaurants = self._initialize_restaurants()
-        self.payments = {}
+        self.payments = {} # in memory storage for payments
     
     def _initialize_restaurants(self):
         restaurants = {}
@@ -39,6 +39,7 @@ class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
         
         return restaurants
     
+    # get restaurants
     def GetRestaurant(self, request, context):
         restaurant_id = request.restaurant_id
         
@@ -51,6 +52,7 @@ class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
         
         logging.info(f"Retrieved restaurant {restaurant_id}")
         
+        # convert items -> protobuf messages
         menu_items = []
         for item in restaurant['menu_items']:
             menu_item = restaurant_service_pb2.MenuItem(
@@ -70,6 +72,7 @@ class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
             is_open=restaurant['is_open']
         )
     
+    # get restaurant payments
     def GetRestaurantPayments(self, request, context):
         restaurant_id = request.restaurant_id
         
@@ -92,6 +95,7 @@ class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
         
         return restaurant_service_pb2.GetRestaurantPaymentsResponse(payments=mock_payments)
     
+    # update menu
     def UpdateMenu(self, request, context):
         restaurant_id = request.restaurant_id
         
@@ -123,6 +127,7 @@ class RestaurantServicer(restaurant_service_pb2_grpc.RestaurantServiceServicer):
             updated_at=now
         )
 
+# starting the gRPC server
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     restaurant_service_pb2_grpc.add_RestaurantServiceServicer_to_server(RestaurantServicer(), server)

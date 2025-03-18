@@ -1,5 +1,4 @@
 syntax = "proto3";
-
 package delivery;
 
 service DeliveryService {
@@ -39,7 +38,6 @@ message DeliveryResponse {
   string assigned_at = 8;
   string picked_up_at = 9;
   string delivered_at = 10;
-  string estimated_delivery_time = 11;
 }
 
 message TrackDeliveryResponse {
@@ -47,7 +45,6 @@ message TrackDeliveryResponse {
   string driver_id = 2;
   string current_location = 3;
   DeliveryStatus status = 4;
-  string estimated_arrival_time = 5;
 }
 
 enum DeliveryStatus {

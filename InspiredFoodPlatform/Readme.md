@@ -53,7 +53,7 @@ Ensure the following are installed:
 
 ## Running the Application and Integration Tests
 
-When running `docker-compose up --build`, the system performs an end-to-end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
+When running `docker compose up --build`, the system performs an end-to-end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
 
 1. **API Gateway Availability**: Checks if the API Gateway is working
 2. **Restaurant Discovery**: Retrieves restaurant details and menu information

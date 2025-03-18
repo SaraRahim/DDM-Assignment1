@@ -1,4 +1,7 @@
+# docker compose file for the inspired food platform
+
 services:
+  # order service 
   order_service:
     build:
       context: .
@@ -11,6 +14,7 @@ services:
       - food-network
     restart: on-failure
 
+  # delivery service
   delivery_service:
     build:
       context: .
@@ -26,6 +30,7 @@ services:
       - order_service
     restart: on-failure
 
+  # restaurant service
   restaurant_service:
     build:
       context: .
@@ -38,6 +43,7 @@ services:
       - food-network
     restart: on-failure
 
+  # api gateway
   api_gateway:
     build:
       context: .
@@ -57,6 +63,7 @@ services:
       - restaurant_service
     restart: on-failure
 
+  # client
   client:
     build:
       context: .

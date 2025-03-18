@@ -18,12 +18,14 @@ from delivery_service import delivery_service_pb2
 from delivery_service import delivery_service_pb2_grpc
 
 logging.basicConfig(level=logging.INFO)
+# fastapi app 
 app = FastAPI(title="Inspired Food API Gateway")
 
 ORDER_SERVICE_ADDR = os.environ.get('ORDER_SERVICE_ADDR', 'order_service:50051')
 DELIVERY_SERVICE_ADDR = os.environ.get('DELIVERY_SERVICE_ADDR', 'delivery_service:50052')
 RESTAURANT_SERVICE_ADDR = os.environ.get('RESTAURANT_SERVICE_ADDR', 'restaurant_service:50053')
 
+# gRPC chanels and stubs
 order_channel = grpc.insecure_channel(ORDER_SERVICE_ADDR)
 order_stub = order_service_pb2_grpc.OrderServiceStub(order_channel)
 
@@ -33,6 +35,7 @@ delivery_stub = delivery_service_pb2_grpc.DeliveryServiceStub(delivery_channel)
 restaurant_channel = grpc.insecure_channel(RESTAURANT_SERVICE_ADDR)
 restaurant_stub = restaurant_service_pb2_grpc.RestaurantServiceStub(restaurant_channel)
 
+# pydantic models for request validation
 class OrderItemModel(BaseModel):
     item_id: str
     quantity: int
@@ -60,6 +63,7 @@ class UpdateMenuModel(BaseModel):
     restaurant_id: str
     menu_items: List[MenuItemModel]
 
+# route to get restaurant details
 @app.get("/restaurants/{restaurant_id}")
 async def get_restaurant(restaurant_id: str):
     request = restaurant_service_pb2.GetRestaurantRequest(restaurant_id=restaurant_id)
@@ -87,6 +91,7 @@ async def get_restaurant(restaurant_id: str):
         logging.error(f"Restaurant Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
     
+# route to allow restaurant to respond to an order 
 @app.post("/restaurants/{restaurant_id}/orders/{order_id}/response")
 async def restaurant_order_response(
     restaurant_id: str, 
@@ -128,6 +133,7 @@ async def restaurant_order_response(
         else:
             raise HTTPException(status_code=500, detail=str(e))
 
+# route to update a restaurant's menu
 @app.put("/restaurants/{restaurant_id}/menu")
 async def update_menu(restaurant_id: str, menu_data: UpdateMenuModel):
     menu_items = []
@@ -166,6 +172,7 @@ async def update_menu(restaurant_id: str, menu_data: UpdateMenuModel):
         logging.error(f"Restaurant Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# route to get restaurant payments
 @app.get("/restaurants/{restaurant_id}/payments")
 async def get_restaurant_payments(restaurant_id: str):
     try:
@@ -190,6 +197,7 @@ async def get_restaurant_payments(restaurant_id: str):
         else:
             raise HTTPException(status_code=500, detail=str(e))
 
+# route to create a new order
 @app.post("/orders")
 async def create_order(order_data: CreateOrderModel):
     items = []
@@ -241,12 +249,12 @@ async def create_order(order_data: CreateOrderModel):
             "total_amount": response.total_amount,
             "created_at": response.created_at,
             "updated_at": response.updated_at,
-            "estimated_delivery_time": response.estimated_delivery_time
         }
     except grpc.RpcError as e:
         logging.error(f"Order Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# route to get order details
 @app.get("/orders/{order_id}")
 async def get_order(order_id: str):
     request = order_service_pb2.GetOrderRequest(order_id=order_id)
@@ -278,12 +286,12 @@ async def get_order(order_id: str):
             "total_amount": response.total_amount,
             "created_at": response.created_at,
             "updated_at": response.updated_at,
-            "estimated_delivery_time": response.estimated_delivery_time
         }
     except grpc.RpcError as e:
         logging.error(f"Order Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# route to update order status
 @app.put("/orders/{order_id}/status")
 async def update_order_status(order_id: str, status: int = Body(..., embed=True)):
     request = order_service_pb2.UpdateOrderStatusRequest(
@@ -303,6 +311,7 @@ async def update_order_status(order_id: str, status: int = Body(..., embed=True)
         logging.error(f"Order Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+#  route to assign a driver for an order 
 @app.post("/deliveries")
 async def assign_driver(order_id: str = Body(...), driver_id: str = Body(...)):
     request = delivery_service_pb2.AssignDriverRequest(
@@ -322,7 +331,6 @@ async def assign_driver(order_id: str = Body(...), driver_id: str = Body(...)):
             "status": delivery_service_pb2.DeliveryStatus.Name(response.status),
             "current_location": response.current_location,
             "assigned_at": response.assigned_at,
-            "estimated_delivery_time": response.estimated_delivery_time
         }
         
         if hasattr(response, 'picked_up_at') and response.picked_up_at:
@@ -336,6 +344,7 @@ async def assign_driver(order_id: str = Body(...), driver_id: str = Body(...)):
         logging.error(f"Delivery Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# route to get delivery details
 @app.get("/deliveries/{delivery_id}")
 async def get_delivery(delivery_id: str):
     request = delivery_service_pb2.GetDeliveryRequest(delivery_id=delivery_id)
@@ -352,7 +361,6 @@ async def get_delivery(delivery_id: str):
             "status": delivery_service_pb2.DeliveryStatus.Name(response.status),
             "current_location": response.current_location,
             "assigned_at": response.assigned_at,
-            "estimated_delivery_time": response.estimated_delivery_time
         }
         
         if hasattr(response, 'picked_up_at') and response.picked_up_at:
@@ -366,6 +374,7 @@ async def get_delivery(delivery_id: str):
         logging.error(f"Delivery Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# route to update delivery status
 @app.put("/deliveries/{delivery_id}/status")
 async def update_delivery_status(
     delivery_id: str, 
@@ -392,6 +401,7 @@ async def update_delivery_status(
         logging.error(f"Delivery Service error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# root endpoint 
 @app.get("/")
 async def root():
     return {
@@ -403,6 +413,7 @@ async def root():
         }
     }
 
+# run FastAPI app using Uvicorn 
 if __name__ == '__main__':
     import uvicorn
     port = int(os.environ.get("PORT", "50050"))

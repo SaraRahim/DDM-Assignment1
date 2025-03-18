@@ -9,15 +9,17 @@ import order_service_pb2_grpc
 
 class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
     def __init__(self):
-        self.orders = {}  
+        self.orders = {} # in memory storage for orders
     
+    # create a new order
     def CreateOrder(self, request, context):
         order_id = str(uuid.uuid4())
         now = datetime.now().isoformat()
         
+        # calculating the total amount for the order
         total_amount = sum(item.price * item.quantity for item in request.items)
         
-        customer_id = str(uuid.uuid4())
+        customer_id = str(uuid.uuid4()) # generating a customer id
         
         self.orders[order_id] = {
             'order_id': order_id,
@@ -33,7 +35,6 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             'total_amount': total_amount,
             'created_at': now,
             'updated_at': now,
-            'estimated_delivery_time': str(datetime.now().timestamp() + 3600)  
         }
         
         logging.info(f"Created order {order_id} for customer {customer_id}")
@@ -51,10 +52,9 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             total_amount=total_amount,
             created_at=now,
             updated_at=now,
-            estimated_delivery_time=str(datetime.now().timestamp() + 3600)
         )
     
-
+    # handling restaurant response based on accepted or rejected 
     def RestaurantOrderResponse(self, request, context):
         order_id = request.order_id
         restaurant_id = request.restaurant_id
@@ -98,6 +98,7 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
         
         return response
     
+    # get order
     def GetOrder(self, request, context):
         order_id = request.order_id
         
@@ -122,9 +123,9 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             total_amount=order['total_amount'],
             created_at=order['created_at'],
             updated_at=order['updated_at'],
-            estimated_delivery_time=order['estimated_delivery_time']
         )
     
+    # update the status of the order
     def UpdateOrderStatus(self, request, context):
         order_id = request.order_id
         
@@ -152,9 +153,9 @@ class OrderServicer(order_service_pb2_grpc.OrderServiceServicer):
             total_amount=order['total_amount'],
             created_at=order['created_at'],
             updated_at=order['updated_at'],
-            estimated_delivery_time=order['estimated_delivery_time']
         )
 
+# starting the gRPC server
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     order_service_pb2_grpc.add_OrderServiceServicer_to_server(OrderServicer(), server)

@@ -1,5 +1,4 @@
 import requests
-import json
 import time
 import sys
 import traceback
@@ -7,7 +6,9 @@ import traceback
 API_BASE_URL = "http://api_gateway:50050"
 
 def get_restaurant(restaurant_id):
-    print(f"\n=== Retrieving Restaurant ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱🍲🍕🍱🍲 \n"
+          "Retrieving Restaurant \n"
+           "🍕🍱🍲🍕🍱🍲🍕🍱🍲🍕🍱🍲 \n")
     try:
         response = requests.get(f"{API_BASE_URL}/restaurants/{restaurant_id}")
         data = response.json()
@@ -29,7 +30,9 @@ def get_restaurant(restaurant_id):
         return None
 
 def create_order(customer_name, customer_email, customer_phone, restaurant_id, items, delivery_address, special_instructions=None):
-    print(f"\n=== Creating Order ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕 \n"
+          "Creating Order \n"
+           "🍕🍱🍲🍕🍱🍲🍕 \n")
     
     payload = {
         "customer_name": customer_name,
@@ -64,7 +67,7 @@ def create_order(customer_name, customer_email, customer_phone, restaurant_id, i
         
         data = response.json()
         
-        print(f"\n=== Order Created Successfully! ===")
+        print(f"\n✅✅✅ Order Created! ✅✅✅")
         #print("Returned Data Keys:", list(data.keys()))
         
         print(f"Order ID: {data.get('order_id', 'N/A')}")
@@ -85,7 +88,9 @@ def create_order(customer_name, customer_email, customer_phone, restaurant_id, i
         return None
 
 def get_order(order_id):
-    print(f"\n=== Retrieving Order ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲 \n"
+          "Retrieving Order \n"
+           "🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲 \n")
     try:
         response = requests.get(f"{API_BASE_URL}/orders/{order_id}")
         data = response.json()
@@ -111,7 +116,9 @@ def get_order(order_id):
         return None
 
 def update_order_status(order_id, status):
-    print(f"\n=== Updating Order Status ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲🍱🍕🍲 \n"
+          "Updating Order Status \n"
+            "🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲🍱🍕🍲 \n")
     try:
         response = requests.put(f"{API_BASE_URL}/orders/{order_id}/status", json={"status": status})
         data = response.json()
@@ -127,7 +134,9 @@ def update_order_status(order_id, status):
         return None
 
 def assign_driver(order_id, driver_id):
-    print(f"\n=== Assigning Driver ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱 \n"
+          "Assigning Driver \n"
+           "🍕🍱🍲🍕🍱🍲🍕🍱 \n")
     try:
         response = requests.post(f"{API_BASE_URL}/deliveries", json={
             "order_id": order_id,
@@ -141,7 +150,6 @@ def assign_driver(order_id, driver_id):
         print(f"Driver ID: {data['driver_id']}")
         print(f"Status: {data['status']}")
         print(f"Current Location: {data['current_location']}")
-        print(f"Estimated Delivery Time: {data['estimated_delivery_time']}")
         
         return data
     except requests.exceptions.RequestException as e:
@@ -149,7 +157,9 @@ def assign_driver(order_id, driver_id):
         return None
 
 def get_delivery(delivery_id):
-    print(f"\n=== Retrieving Delivery ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲 \n"
+          " Retrieving Delivery \n"
+          "🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲 \n")
     try:
         response = requests.get(f"{API_BASE_URL}/deliveries/{delivery_id}")
         data = response.json()
@@ -168,7 +178,9 @@ def get_delivery(delivery_id):
         return None
 
 def update_delivery_status(delivery_id, status, current_location):
-    print(f"\n=== Updating Delivery Status ===")
+    print(f"\n🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲🍱🍕 \n"
+          "Updating Delivery Status \n"
+          "🍕🍱🍲🍕🍱🍲🍕🍱🍕🍲🍱🍕 \n")
     try:
         response = requests.put(f"{API_BASE_URL}/deliveries/{delivery_id}/status", json={
             "status": status,
@@ -187,7 +199,11 @@ def update_delivery_status(delivery_id, status, current_location):
         return None
     
 def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_reason=None):
-    print(f"\n=== Restaurant {'Accepting' if accepted else 'Rejecting'} Order ===")
+    print(
+        f"\n 🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲 \n"
+        f" Restaurant {'Accepting' if accepted else 'Rejecting'} Order \n"
+        f"🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲🍱🍕🍲 \n"
+    )
     payload = {
         "accepted": accepted
     }
@@ -207,9 +223,9 @@ def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_rea
         data = response.json()
         
         if accepted:
-            print(f"Order accepted by restaurant!")
+            print(f"✅✅✅ Order accepted by restaurant! ✅✅✅")
         else:
-            print(f"Order rejected by restaurant. Reason: {data.get('rejection_reason', 'No reason provided')}")
+            print(f"❌❌❌ Order rejected by restaurant. ❌❌❌ Reason: {data.get('rejection_reason', 'No reason provided')}")
             
         print(f"Order ID: {data['order_id']}")
         print(f"New Status: {data['status']}")
@@ -221,7 +237,9 @@ def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_rea
         return None
 
 def get_restaurant_payments(restaurant_id):
-    print(f"\n=== Retrieving Payments for Restaurant ===")
+    print(f"\n💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸 \n"
+          "Retrieving Payments for Restaurant \n"
+          "💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸💸 \n")
     try:
         response = requests.get(f"{API_BASE_URL}/restaurants/{restaurant_id}/payments")
         data = response.json()
@@ -229,7 +247,7 @@ def get_restaurant_payments(restaurant_id):
         print(f"Payments retrieved for restaurant {restaurant_id}:")
         
         if not data:  
-            print("  No payments found")
+            print(" ❌ No payments found ❌")
         else:
             for payment in data:
                 print(f"  Payment ID: {payment['payment_id']}")
@@ -245,7 +263,9 @@ def get_restaurant_payments(restaurant_id):
         return None
 
 def run():
-    print("=== Inspired Food Platform Client Demo ===")
+    print("🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕 \n"
+    "Inspired Food Platform Client Demo \n"
+    "🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕\n")
     
     try:
         response = requests.get(f"{API_BASE_URL}/")
@@ -276,13 +296,13 @@ def run():
     ]
     
     order = create_order(
-        customer_name="John Doe",
-        customer_email="john.doe@example.com",
-        customer_phone="555-123-4567",
+        customer_name="Sara Rahim",
+        customer_email="sara.rahim@mycit.ie",
+        customer_phone="R00-211-761",
         restaurant_id=restaurant['restaurant_id'],
         items=order_items,
-        delivery_address="123 Customer Lane, Foodville",
-        special_instructions="Please ring doorbell twice"
+        delivery_address="Rossa Ave, Bishopstown, Cork, T12 P928",
+        special_instructions="Please leave the food outside."
     )
     
     if not order:
@@ -338,7 +358,9 @@ def run():
         time.sleep(1)
         get_restaurant_payments("restaurant456")
         
-        print("\n=== Demo completed successfully! ===")
+        print("\n🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕 \n"
+        " Demo completed successfully! \n"
+        "🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕⭐🍕")
     else:
         print("Order was rejected by restaurant. Ending demo.")
         sys.exit(0)
