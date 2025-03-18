@@ -334,10 +334,7 @@ def run():
             status=2,  # DELIVERY_PICKED_UP
             current_location="At restaurant"
         )
-        
-        time.sleep(1)
-        get_order(order['order_id'])
-        
+            
         time.sleep(1)
         update_delivery_status(
             delivery_id=delivery['delivery_id'],
