@@ -4,23 +4,20 @@ import logging
 from datetime import datetime
 from concurrent import futures
 import sys
-
 import grpc
 import delivery_service_pb2
 import delivery_service_pb2_grpc
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 sys.path.insert(0, os.path.join(project_root, 'order_service'))
-
 from order_service import order_service_pb2
 from order_service import order_service_pb2_grpc
 
 
 class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
     def __init__(self):
-        self.deliveries = {}  # In-memory storage
+        self.deliveries = {}  
         
-        # Connect to Order service
         order_service_addr = os.environ.get('ORDER_SERVICE_ADDR', 'order_service:50051')
         try:
             self.order_channel = grpc.insecure_channel(order_service_addr)
@@ -33,7 +30,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         order_id = request.order_id
         driver_id = request.driver_id
         
-        # Check if order exists by calling Order service
         try:
             order_request = order_service_pb2.GetOrderRequest(order_id=order_id)
             order_response = self.order_stub.GetOrder(order_request)
@@ -43,7 +39,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
                 context.set_details(f"Order {order_id} not found")
                 return delivery_service_pb2.DeliveryResponse()
                 
-            # Create delivery entry
             delivery_id = str(uuid.uuid4())
             now = datetime.now().isoformat()
             
@@ -51,26 +46,24 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
                 'delivery_id': delivery_id,
                 'order_id': order_id,
                 'driver_id': driver_id,
-                'restaurant_address': '123 Restaurant St',  # Would come from restaurant service
+                'restaurant_address': '123 Restaurant St', 
                 'customer_address': order_response.delivery_address,
                 'status': delivery_service_pb2.DELIVERY_ASSIGNED,
                 'current_location': 'Driver starting location',
                 'assigned_at': now,
                 'picked_up_at': None,
                 'delivered_at': None,
-                'estimated_delivery_time': str(datetime.now().timestamp() + 1800)  # 30 min from now
+                'estimated_delivery_time': str(datetime.now().timestamp() + 1800) 
             }
             
             logging.info(f"Assigned driver {driver_id} to order {order_id}, delivery {delivery_id}")
             
-            # Update order status
             update_request = order_service_pb2.UpdateOrderStatusRequest(
                 order_id=order_id,
                 status=order_service_pb2.ORDER_CONFIRMED
             )
             self.order_stub.UpdateOrderStatus(update_request)
             
-            # Build response
             return delivery_service_pb2.DeliveryResponse(
                 delivery_id=delivery_id,
                 order_id=order_id,
@@ -92,18 +85,14 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
     def GetDelivery(self, request, context):
         delivery_id = request.delivery_id
         
-        # Check if delivery exists
         if delivery_id not in self.deliveries:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f"Delivery {delivery_id} not found")
             return delivery_service_pb2.DeliveryResponse()
         
-        # Get delivery data
         delivery = self.deliveries[delivery_id]
-        
         logging.info(f"Retrieved delivery {delivery_id}")
         
-        # Build response
         response = delivery_service_pb2.DeliveryResponse(
             delivery_id=delivery['delivery_id'],
             order_id=delivery['order_id'],
@@ -116,7 +105,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             estimated_delivery_time=delivery['estimated_delivery_time']
         )
         
-        # Add optional fields
         if delivery['picked_up_at']:
             response.picked_up_at = delivery['picked_up_at']
         if delivery['delivered_at']:
@@ -127,23 +115,19 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
     def UpdateDeliveryStatus(self, request, context):
         delivery_id = request.delivery_id
         
-        # Check if delivery exists
         if delivery_id not in self.deliveries:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f"Delivery {delivery_id} not found")
             return delivery_service_pb2.DeliveryResponse()
         
-        # Update delivery
         delivery = self.deliveries[delivery_id]
         delivery['status'] = request.status
         delivery['current_location'] = request.current_location
         
-        # Update timestamps based on status
         now = datetime.now().isoformat()
         if request.status == delivery_service_pb2.DELIVERY_PICKED_UP:
             delivery['picked_up_at'] = now
             
-            # Update order status
             try:
                 update_request = order_service_pb2.UpdateOrderStatusRequest(
                     order_id=delivery['order_id'],
@@ -156,7 +140,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         elif request.status == delivery_service_pb2.DELIVERY_DELIVERED:
             delivery['delivered_at'] = now
             
-            # Update order status
             try:
                 update_request = order_service_pb2.UpdateOrderStatusRequest(
                     order_id=delivery['order_id'],
@@ -168,7 +151,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         
         logging.info(f"Updated delivery {delivery_id} status to {request.status}")
         
-        # Build response
         response = delivery_service_pb2.DeliveryResponse(
             delivery_id=delivery['delivery_id'],
             order_id=delivery['order_id'],
@@ -181,7 +163,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
             estimated_delivery_time=delivery['estimated_delivery_time']
         )
         
-        # Add optional fields
         if delivery['picked_up_at']:
             response.picked_up_at = delivery['picked_up_at']
         if delivery['delivered_at']:
@@ -192,16 +173,13 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
     def TrackDelivery(self, request, context):
         delivery_id = request.delivery_id
         
-        # Check if delivery exists
         if delivery_id not in self.deliveries:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(f"Delivery {delivery_id} not found")
             return
         
-        # Get delivery data
         delivery = self.deliveries[delivery_id]
         
-        # Send initial state
         response = delivery_service_pb2.TrackDeliveryResponse(
             delivery_id=delivery['delivery_id'],
             driver_id=delivery['driver_id'],
@@ -212,10 +190,6 @@ class DeliveryServicer(delivery_service_pb2_grpc.DeliveryServiceServicer):
         
         yield response
         
-        # For a real streaming implementation, you'd continue to send updates
-        # For this example, we just send the initial state
-
-
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     delivery_service_pb2_grpc.add_DeliveryServiceServicer_to_server(DeliveryServicer(), server)
@@ -224,7 +198,6 @@ def serve():
     server.start()
     logging.info("Delivery service started on port 50052")
     server.wait_for_termination()
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

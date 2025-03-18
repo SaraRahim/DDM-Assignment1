@@ -31,7 +31,6 @@ def get_restaurant(restaurant_id):
 def create_order(customer_name, customer_email, customer_phone, restaurant_id, items, delivery_address, special_instructions=None):
     print(f"\n=== Creating Order ===")
     
-    # Prepare the payload exactly as per the service requirements
     payload = {
         "customer_name": customer_name,
         "customer_email": customer_email,
@@ -41,62 +40,33 @@ def create_order(customer_name, customer_email, customer_phone, restaurant_id, i
         "delivery_address": delivery_address
     }
     
-    # Add special instructions if provided
     if special_instructions:
         payload["special_instructions"] = special_instructions
-    
-    # For debugging: add customer ID if needed
-    if not any(payload.get(key) for key in ['customer_id', 'customer_name', 'customer_email', 'customer_phone']):
-        payload['customer_name'] = 'Unknown Customer'
-    
+     
     try:
-        # Enable very verbose logging
-        print("Full Request Payload:")
-        print(json.dumps(payload, indent=2))
         
-        # Add headers to help with debugging
         headers = {
             'Content-Type': 'application/json',
             'X-Debug-Mode': 'true'
         }
         
-        # Perform the request with detailed error handling
         response = requests.post(
             f"{API_BASE_URL}/orders", 
             json=payload, 
             headers=headers
         )
         
-        # Log full response details
-        print("\n=== Full Response Details ===")
-        print(f"Status Code: {response.status_code}")
-        print("Response Headers:")
-        for key, value in response.headers.items():
-            print(f"{key}: {value}")
-        
-        # Try to parse response content
-        try:
-            response_content = response.json()
-            print("\nResponse Content:")
-            print(json.dumps(response_content, indent=2))
-        except ValueError:
-            print("\nResponse Content (non-JSON):")
-            print(response.text)
-        
-        # Detailed error handling
         if response.status_code >= 400:
             print("\n=== Error Details ===")
             print(f"Status Code: {response.status_code}")
             print("Response Body:", response.text)
             return None
         
-        # Parse successful response
         data = response.json()
         
         print(f"\n=== Order Created Successfully! ===")
-        print("Returned Data Keys:", list(data.keys()))
+        #print("Returned Data Keys:", list(data.keys()))
         
-        # Safely extract order details
         print(f"Order ID: {data.get('order_id', 'N/A')}")
         print(f"Status: {data.get('status', 'N/A')}")
         print(f"Total Amount: ${data.get('total_amount', 'N/A')}")
@@ -217,9 +187,6 @@ def update_delivery_status(delivery_id, status, current_location):
         return None
     
 def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_reason=None):
-    """
-    Function for restaurant to accept or reject an order
-    """
     print(f"\n=== Restaurant {'Accepting' if accepted else 'Rejecting'} Order ===")
     payload = {
         "accepted": accepted
@@ -233,7 +200,6 @@ def restaurant_respond_to_order(restaurant_id, order_id, accepted, rejection_rea
             json=payload
         )
         
-        # Check for errors
         if response.status_code >= 400:
             print(f"Error: {response.status_code} - {response.text}")
             return None
@@ -262,7 +228,7 @@ def get_restaurant_payments(restaurant_id):
         
         print(f"Payments retrieved for restaurant {restaurant_id}:")
         
-        if not data:  # If the list is empty
+        if not data:  
             print("  No payments found")
         else:
             for payment in data:
@@ -281,7 +247,6 @@ def get_restaurant_payments(restaurant_id):
 def run():
     print("=== Inspired Food Platform Client Demo ===")
     
-    # First, check API Gateway availability
     try:
         response = requests.get(f"{API_BASE_URL}/")
         print(f"Connected to API Gateway: {response.json()['message']}")
@@ -289,12 +254,10 @@ def run():
         print(f"Error connecting to API Gateway: {e}")
         sys.exit(1)
     
-    # Retrieve restaurant details
     restaurant = get_restaurant("restaurant456")
     if not restaurant:
         sys.exit(1)
     
-    # Prepare order items based on the restaurant's menu
     order_items = [
         {
             "item_id": restaurant['menu_items'][0]['item_id'],
@@ -312,7 +275,6 @@ def run():
         }
     ]
     
-    # Create an order
     order = create_order(
         customer_name="John Doe",
         customer_email="john.doe@example.com",
@@ -326,32 +288,26 @@ def run():
     if not order:
         sys.exit(1)
     
-    # Restaurant responds to order
     response = restaurant_respond_to_order(
         restaurant_id=restaurant['restaurant_id'],
         order_id=order['order_id'],
-        accepted=True  # Change to False to test rejection
+        accepted=True  
     )
     
     if not response:
         sys.exit(1)
         
-    # Only continue with preparation if order was accepted
     if response['status'] == "ORDER_CONFIRMED":
-        # Simulate restaurant preparing order
         time.sleep(1)
         update_order_status(order['order_id'], 4)  # ORDER_PREPARING
         
-        # Assign a driver for delivery
         delivery = assign_driver(order['order_id'], "driver789")
         if not delivery:
             sys.exit(1)
         
-        # Get delivery details
         time.sleep(1)
         get_delivery(delivery['delivery_id'])
         
-        # Update delivery status - driver picked up the order
         time.sleep(1)
         update_delivery_status(
             delivery_id=delivery['delivery_id'],
@@ -359,11 +315,9 @@ def run():
             current_location="At restaurant"
         )
         
-        # Get updated order status
         time.sleep(1)
         get_order(order['order_id'])
         
-        # Update delivery status - driver is on the way
         time.sleep(1)
         update_delivery_status(
             delivery_id=delivery['delivery_id'],
@@ -371,7 +325,6 @@ def run():
             current_location="Halfway to customer's address"
         )
         
-        # Update delivery status - order delivered
         time.sleep(1)
         update_delivery_status(
             delivery_id=delivery['delivery_id'],
@@ -379,11 +332,9 @@ def run():
             current_location="At customer's address"
         )
         
-        # Get final order status
         time.sleep(1)
         get_order(order['order_id'])
         
-        # Get restaurant payments
         time.sleep(1)
         get_restaurant_payments("restaurant456")
         
@@ -393,6 +344,5 @@ def run():
         sys.exit(0)
 
 if __name__ == "__main__":
-    # Wait a moment for services to be ready
     time.sleep(5)
     run()
