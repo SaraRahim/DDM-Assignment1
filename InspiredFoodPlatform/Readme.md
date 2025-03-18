@@ -9,7 +9,7 @@ This assignment requires me to analyse a business problem, design a microservice
 
 ## System Architecture
 
-The system is composed of several microservices:
+The system is made up of 5 microservices:
 - **API Gateway**: Single entry point for external REST API calls, converting them to gRPC calls for internal communication.
 - **Restaurant Service**: Oversees restaurant profiles by managing details such as menus and processing payments. This service allows restaurants to update their menus and accept or reject incoming orders while keeping track of payments.
 - **Order Service**: Manages the order lifecycle by creating orders and updating their status. It embeds customer information directly within each order so that customers can place orders and later track their delivery status.
@@ -21,13 +21,13 @@ The system is composed of several microservices:
 Ensure the following are installed:
 - Docker and Docker Compose
 - Git
-- Python 3.9
+- Python 
 
 ## Local Development Setup
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/inspiredfoodplatform.git
+   git clone https://github.com/enterusename/inspiredfoodplatform.git
    cd inspiredfoodplatform
    ```
 
@@ -55,7 +55,7 @@ Ensure the following are installed:
 
 When running `docker-compose up --build`, the system performs an end-to-end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
 
-1. **API Gateway Availability**: Checks if the API Gateway is operational
+1. **API Gateway Availability**: Checks if the API Gateway is working
 2. **Restaurant Discovery**: Retrieves restaurant details and menu information
 3. **Order Creation**:
    - Sends customer details (name, email, phone)
@@ -73,15 +73,15 @@ When running `docker-compose up --build`, the system performs an end-to-end inte
 
 The `client.py` script serves as an integration test, ensuring that:
 - All microservices communicate correctly
-- REST to gRPC translation works seamlessly
-- The entire business process flows without interruption
+- REST to gRPC translation works 
+- The entire business process flows without errors
 
 To run the full test suite:
 ```bash
 docker-compose up --build
 ```
 
-If everything runs successfully, you'll see a message indicating that the demo completed successfully, verifying the entire system's integration and functionality.
+If everything runs successfully, a message will come up indicating that the demo completed successfully, verifying the entire system's integration and functionality.
 
 ## Bonus Challenge: API Gateway Implementation
 
@@ -100,7 +100,7 @@ The API Gateway was implemented as a key component of the microservice architect
 - **Protocol Translation**: 
   - Converts external REST API calls to internal gRPC communication
   - Enables clients to interact with a simple REST interface
-  - Maintains high-performance internal communication via gRPC
+  - Maintains high performance internal communication via gRPC
 
 - **Architecture Benefits**:
   - Centralized access management
@@ -123,26 +123,3 @@ The API Gateway solution demonstrates:
   ```bash
   docker-compose logs [service_name]
   ```
-
-## API Gateway Features
-
-The API Gateway provides:
-- Centralized access point
-- REST to gRPC protocol translation
-- Enhanced security
-- Simplified client integration
-
-## Testing Approach
-
-The integration tests (client demo) cover the entire workflow, ensuring:
-- Correct API Gateway REST to gRPC translation
-- Proper microservice interactions
-- End-to-end system functionality
-
-## Final Notes
-
-Running `docker-compose up --build` will:
-- Build all services
-- Start all containers
-- Run the comprehensive integration test
-- Verify the complete system functionality
