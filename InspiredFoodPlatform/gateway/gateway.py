@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(project_root, 'delivery_service'))
 import logging
 from fastapi import FastAPI, HTTPException, Body
 from pydantic import BaseModel
+import uvicorn
 from typing import List, Optional
 import grpc
 from order_service import order_service_pb2
@@ -415,6 +416,5 @@ async def root():
 
 # run FastAPI app using Uvicorn 
 if __name__ == '__main__':
-    import uvicorn
     port = int(os.environ.get("PORT", "50050"))
     uvicorn.run(app, host="0.0.0.0", port=port)

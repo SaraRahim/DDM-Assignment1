@@ -1,6 +1,6 @@
 # Inspired Food Platform
 
-This assignment requires me to analyse a business problem, design a microservice-based solution, implement core functionalities, and deploy the system using Docker Compose.
+This assignment required me to analyse a business problem, design a micro service based solution, implement core functionalities and deploy the system using Docker Compose.
 
 ## Project Information
 
@@ -9,12 +9,12 @@ This assignment requires me to analyse a business problem, design a microservice
 
 ## System Architecture
 
-The system is made up of 5 microservices:
+The system is made up of 5 micro services:
 - **API Gateway**: Single entry point for external REST API calls, converting them to gRPC calls for internal communication.
 - **Restaurant Service**: Oversees restaurant profiles by managing details such as menus and processing payments. This service allows restaurants to update their menus and accept or reject incoming orders while keeping track of payments.
 - **Order Service**: Manages the order lifecycle by creating orders and updating their status. It embeds customer information directly within each order so that customers can place orders and later track their delivery status.
 - **Delivery Service**: Handles all aspects of delivery by assigning drivers to orders and tracking the progress of deliveries. This service ensures that delivery drivers can view their assigned orders, update their status as they move along the route and mark orders as delivered.
-- **Client Demo**: Simulates an end-to-end workflow for system testing.
+- **Client Demo**: Simulates an end to end workflow for system testing.
 
 ## Prerequisites
 
@@ -25,11 +25,13 @@ Ensure the following are installed:
 
 ## Local Development Setup
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/enterusename/inspiredfoodplatform.git
-   cd inspiredfoodplatform
-   ```
+1. Download the ZIP file:
+   - Download the Inspired Food Platform ZIP file.
+   - Extract the contents to a folder on your computer.
+   - Open your terminal and navigate to the extracted folder:
+     ```
+     cd InspiredFoodPlatform
+     ```
 
 2. Create a virtual environment:
 
@@ -47,13 +49,12 @@ Ensure the following are installed:
 
 3. Install project requirements:
    ```bash
-   pip install --upgrade pip
    pip install -r requirements.txt
    ```
 
 ## Running the Application and Integration Tests
 
-When running `docker compose up --build`, the system performs an end-to-end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
+When running `docker compose up --build`, the system performs an end to end integration test through the `client.py` script. This test simulates a complete food ordering workflow:
 
 1. **API Gateway Availability**: Checks if the API Gateway is working
 2. **Restaurant Discovery**: Retrieves restaurant details and menu information
