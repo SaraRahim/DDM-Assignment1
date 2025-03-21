@@ -26,7 +26,7 @@ ORDER_SERVICE_ADDR = os.environ.get('ORDER_SERVICE_ADDR', 'order_service:50051')
 DELIVERY_SERVICE_ADDR = os.environ.get('DELIVERY_SERVICE_ADDR', 'delivery_service:50052')
 RESTAURANT_SERVICE_ADDR = os.environ.get('RESTAURANT_SERVICE_ADDR', 'restaurant_service:50053')
 
-# gRPC chanels and stubs
+# gRPC chanels and  stubs
 order_channel = grpc.insecure_channel(ORDER_SERVICE_ADDR)
 order_stub = order_service_pb2_grpc.OrderServiceStub(order_channel)
 
